@@ -33,15 +33,22 @@ angular.module('ngAjax', ['chieffancypants.loadingBar', 'ngAnimate'])
             }
             var cfg = self.config;
             var deferred = $q.defer();
+
             $http(config).then(function(res) {
+                // 正常返回结果
                 if (res.data[cfg.codeField] === cfg.successCode) {
                     deferred.resolve(res.data[cfg.contentField])
-                } else {
-                    deferred.reject(res[cfg.errorField]);
-                } 
+                    return;
+                }
+                // 后端报错
+                deferred.reject(res.data[cfg.errorField]); 
             }, function(res) {
+                // http错误
                 deferred.reject(res.status + ' : ' + res.statusText); 
             });
+
+            // 调用时，需要先写fail再写done 否则fail会把done覆盖
+            // todo：需要always和随便先后顺序
             deferred.promise.done = function(fn) {
                 deferred.promise.then(function(resData) {
                     fn(resData);

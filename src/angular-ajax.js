@@ -16,7 +16,7 @@ angular.module('ngAjax', ['chieffancypants.loadingBar', 'ngAnimate'])
             // 成功
             successCode: 0,
             // 内容字段
-            contentField: 'content',
+            contentField: 'data',
             // 错误描述字段
             errorField: 'error'
         };
@@ -34,8 +34,8 @@ angular.module('ngAjax', ['chieffancypants.loadingBar', 'ngAnimate'])
             var cfg = self.config;
             var deferred = $q.defer();
             $http(config).then(function(res) {
-                if (res[cfg.codeField] !== cfg.successCode) {
-                    deferred.resolve(res[cfg.contentField])
+                if (res.data[cfg.codeField] === cfg.successCode) {
+                    deferred.resolve(res.data[cfg.contentField])
                 } else {
                     deferred.reject(res[cfg.errorField]);
                 } 
@@ -57,6 +57,15 @@ angular.module('ngAjax', ['chieffancypants.loadingBar', 'ngAnimate'])
             return deferred.promise;
         }; 
         this.get = function(url, data) {
+            // 参数格式化追加到url上
+            if (data) {
+                var p = [];
+                angular.forEach(data, function(v, k) {
+                    p.push(k + '=' + v); 
+                });
+                p = '?' + p.join('&');
+                url += p;
+            }
             return this.request({
                 method: 'GET',
                 url: url

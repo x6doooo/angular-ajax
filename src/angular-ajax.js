@@ -3,7 +3,7 @@
 angular.module('ngAjax', ['chieffancypants.loadingBar', 'ngAnimate'])
     .config(function(cfpLoadingBarProvider) {
       //true is the default, but I left this here as an example:
-      cfpLoadingBarProvider.includeSpinner = false;
+      cfpLoadingBarProvider.includeSpinner = true;
     })
     .service('$ajax', 
     ['$q', '$http', 'cfpLoadingBar',
@@ -25,8 +25,11 @@ angular.module('ngAjax', ['chieffancypants.loadingBar', 'ngAnimate'])
             var c = angular.extend({}, self.defaultConfig, cfg);
             self.config = c;
         };
-        
+                
         self.request = function(config) {
+            
+            cfpLoadingBar.start();
+
             // 未添加设置，采用默认设置
             if (!self.config) {
                 self.setConfig({});
@@ -62,23 +65,51 @@ angular.module('ngAjax', ['chieffancypants.loadingBar', 'ngAnimate'])
                 return deferred.promise;
             };
             return deferred.promise;
-        }; 
-        this.get = function(url, data) {
-            // 参数格式化追加到url上
-            if (data) {
-                var p = [];
-                angular.forEach(data, function(v, k) {
-                    p.push(k + '=' + v); 
-                });
-                p = '?' + p.join('&');
-                url += p;
-            }
-            return this.request({
-                method: 'GET',
-                url: url
-            });
         };
-        // todo: put delete post
+
+        var methods = ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'PATCH'];
+        angular.forEach(methods, function(m, i) {
+            self[m.toLowerCase()] = function(url, data, config) {
+                switch(m) {
+                    case 'GET':
+                        if(data) {
+                            var p = [];
+                            angular.forEach(data, function(v, k) {
+                                p.push(k + '=' + v); 
+                            });
+                            p = '?' + p.join('&');
+                            url += p;
+                            data = null;
+                        }
+                        break;
+                    case 'HEAD':
+                    case 'DELETE':
+                        if (data) {
+                            config = data;
+                            data = null;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+                var obj = {
+                    method: m,
+                    url: url
+                };
+                if (data) obj.data = data;
+                if (config) obj.config = config;
+                return this.request(obj);
+            };
+        });
+
+        /* TODO:
+         *
+         *  jsonp
+         *  abort
+         *  when(xhr, xhr, ...)
+         *
+         * */
+
     }]);
 
 })(window, window.angular)

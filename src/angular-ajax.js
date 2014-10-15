@@ -50,8 +50,6 @@ angular.module('ngAjax', ['chieffancypants.loadingBar', 'ngAnimate'])
                 deferred.reject(res.status + ' : ' + res.statusText); 
             });
 
-            // 调用时，需要先写fail再写done 否则fail会把done覆盖
-            // todo：需要always和随便先后顺序
             deferred.promise.done = function(fn) {
                 deferred.promise.then(function(resData) {
                     fn(resData);

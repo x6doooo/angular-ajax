@@ -1,5 +1,32 @@
 (function(window, angular) {
 
+    var limit = 65535;
+    function createBaseArray() {
+        return [0, 0];
+    }
+    var cacheNums = {};
+    var guid = function(key) {
+        var nums = cacheNums[key];
+        if (!nums) {
+            nums = cacheNums[key] = createBaseArray();
+        }
+        var idx = 0;
+        var len = nums.length;
+        while(idx < len) {
+            if (++nums[idx] > limit) {
+                nums[idx] = 0;
+                idx++;
+            } else {
+                break;
+            }
+        }
+        var id = nums.join('-');
+        if (key) {
+            id = key + '-' + id;
+        }
+        return id;
+    };
+
     angular.module('ngAjax', [
         'chieffancypants.loadingBar', 
         'ngAnimate'
@@ -21,12 +48,19 @@
         };
         // 设置
         self.setConfig = function(cfg) {
-            var c = angular.extend({},
-            self.defaultConfig, cfg);
-            self.config = c;
+            self.confg = angular.extend({}, self.defaultConfig, cfg);
         };
 
+        var abortMsgStr = 'angular-ajax-abort-1234567890';
+
+        // TODO:缓存访问
+        var allRequest = {};
+
+        self.clearAll = function() {};
+
         self.request = function(config) {
+            
+            var uid = guid('$ajax');
 
             cfpLoadingBar.start();
 
@@ -37,8 +71,14 @@
             var cfg = self.config;
             var deferred = $q.defer();
             config.timeout = deferred;
+            allRequest[uid] = deferred;
+
+            if (config.beforeSend) {
+                config.beforeSend();
+            }
 
             $http(config).then(function(res) {
+                delete allRequest[uid];
                 // 正常返回结果
                 if (res.data[cfg.codeField] === cfg.successCode) {
                     deferred.resolve(res.data[cfg.contentField])
@@ -48,13 +88,15 @@
                 deferred.reject(res.data[cfg.errorField]);
             },
             function(res) {
+                delete allRequest[uid];
                 // http错误
                 deferred.reject(res.status + ' : ' + res.statusText);
             });
 
             deferred.promise.done = function(fn) {
                 deferred.promise.then(function(resData) {
-                    if (resData = 'angular-ajax-abort') {
+                    console.log(resData);
+                    if (resData === abortMsgStr) {
                         return;
                     }
                     fn(resData);
@@ -69,7 +111,7 @@
             };
             //取消
             deferred.promise.abort = function() {
-                deferred.resolve('angular-ajax-abort');
+                deferred.resolve();
             };
             return deferred.promise;
         };
@@ -78,26 +120,26 @@
         angular.forEach(methods, function(m, i) {
             self[m.toLowerCase()] = function(url, data, config) {
                 switch (m) {
-                case 'GET':
-                    if (data) {
-                        var p = [];
-                        angular.forEach(data, function(v, k) {
-                            p.push(k + '=' + v);
-                        });
-                        p = '?' + p.join('&');
-                        url += p;
-                        data = null;
-                    }
-                    break;
-                case 'HEAD':
-                case 'DELETE':
-                    if (data) {
-                        config = data;
-                        data = null;
-                    }
-                    break;
-                default:
-                    break;
+                    case 'GET':
+                        if (data) {
+                            var p = [];
+                            angular.forEach(data, function(v, k) {
+                                p.push(k + '=' + v);
+                            });
+                            p = '?' + p.join('&');
+                            url += p;
+                            data = null;
+                        }
+                        break;
+                    case 'HEAD':
+                    case 'DELETE':
+                        if (data) {
+                            config = data;
+                            data = null;
+                        }
+                        break;
+                    default:
+                        break;
                 }
                 var obj = {
                     method: m,

@@ -56,7 +56,12 @@
         // TODO:缓存访问
         var allRequest = {};
 
-        self.clearAll = function() {};
+        self.clearAll = function() {
+            angular.forEach(allRequest, function(v, k) {
+                v.abort();
+                delete allRequest[k];
+            });
+        };
 
         self.request = function(config) {
             

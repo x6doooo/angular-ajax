@@ -53,8 +53,13 @@
 
         var abortMsgStr = 'angular-ajax-abort-1234567890';
 
-        // TODO:缓存访问
         var allRequest = {};
+
+        // todo: all
+        self.all = function(/*defer, defer, ...*/) {
+            var args = Array.prototype.slice.call(arguments, 0);
+
+        };
 
         self.clearAll = function() {
             angular.forEach(allRequest, function(v, k) {

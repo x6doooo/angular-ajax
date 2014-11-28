@@ -55,8 +55,8 @@
 
         var allRequest = {};
 
-        // todo: all
-        self.all = function(/*defer, defer, ...*/) {
+        // todo: some defer snyc
+        self.when = function(/*defer, defer, ...*/) {
             var args = Array.prototype.slice.call(arguments, 0);
 
         };
@@ -64,11 +64,12 @@
         self.clearAll = function() {
             angular.forEach(allRequest, function(v, k) {
                 v.abort();
-                delete allRequest[k];
+                //在abort里完成delete
+                //delete allRequest[k];
             });
         };
 
-        self.request = function(config) {
+        self.request = function(ajaxConfig) {
             
             var uid = guid('$ajax');
 
@@ -80,18 +81,18 @@
             }
             var cfg = self.config;
             var deferred = $q.defer();
-            config.timeout = deferred;
+            ajaxConfig.timeout = deferred;
             allRequest[uid] = deferred;
 
-            if (config.beforeSend) {
-                config.beforeSend();
+            if (ajaxConfig.beforeSend) {
+                ajaxConfig.beforeSend();
             }
 
-            $http(config).then(function(res) {
+            $http(ajaxConfig).then(function(res) {
                 delete allRequest[uid];
                 // 正常返回结果
                 if (res.data[cfg.codeField] === cfg.successCode) {
-                    deferred.resolve(res.data[cfg.contentField])
+                    deferred.resolve(res.data[cfg.contentField]);
                     return;
                 }
                 // 后端报错
@@ -121,13 +122,14 @@
             };
             //取消
             deferred.promise.abort = function() {
+                delete allRequest[uid];
                 deferred.resolve();
             };
             return deferred.promise;
         };
 
         var methods = ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'PATCH'];
-        angular.forEach(methods, function(m, i) {
+        angular.forEach(methods, function(m) {
             self[m.toLowerCase()] = function(url, data, config) {
                 switch (m) {
                     case 'GET':
@@ -171,5 +173,5 @@
 
     }]);
 
-})(window, window.angular)
+})(window, window.angular);
 

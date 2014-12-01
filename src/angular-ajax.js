@@ -37,6 +37,10 @@
         var self = this;
         // 默认设置
         self.defaultConfig = {
+            // 超时
+            // timeout: false,
+            // 允许cache  由$http设置
+            // cache: false,
             // 状态描述字段
             codeField: 'code',
             // 成功
@@ -48,19 +52,59 @@
         };
         // 设置
         self.setConfig = function(cfg) {
-            self.confg = angular.extend({}, self.defaultConfig, cfg);
+            self.config = angular.extend({}, self.defaultConfig, cfg);
         };
 
         var abortMsgStr = 'angular-ajax-abort-1234567890';
 
         var allRequest = {};
 
-        // todo: some defer snyc
-        self.when = function(/*defer, defer, ...*/) {
-            var args = Array.prototype.slice.call(arguments, 0);
+        /*
+            todo: some defer snyc.... 可以把一个when里的ajax都abort掉
+            todo: 要区分error和success
+            todo: cache write read delete
 
+            todo: test abort
+        */
+
+        function _checkDone(count, hasDone, allPromise, data) {
+            if (count === hasDone) {
+                allPromise.resolve(data);
+            }
+        }
+
+        self.when = function(/* defer, defer, ... */) {
+            var args = Array.prototype.slice.call(arguments, 0);
+            var count = args.length;
+            var hasDone = 0;
+            var results = [];
+            var deferred = $q.defer();
+            angular.forEach(args, function(v, k) {
+                v.done(function(data) {
+                    results[k] = {
+                        success: true,
+                        data: data
+                    };
+                    hasDone++;
+                    _checkDone(count, hasDone, deferred, results);
+                }).fail(function(err) {
+                    results[k] = {
+                        success: false,
+                        error: err
+                    };
+                    hasDone++;
+                    _checkDone(count, hasDone, deferred, results);
+                });
+            });
+            deferred.promise.abort = function() {
+                angular.forEach(args, function(v) {
+                    v.abort();
+                });
+            };
+            return deferred.promise;
         };
 
+        // 取消所有
         self.clearAll = function() {
             angular.forEach(allRequest, function(v, k) {
                 v.abort();
@@ -80,6 +124,8 @@
                 self.setConfig({});
             }
             var cfg = self.config;
+
+
             var deferred = $q.defer();
             ajaxConfig.timeout = deferred;
             allRequest[uid] = deferred;
@@ -104,9 +150,9 @@
                 deferred.reject(res.status + ' : ' + res.statusText);
             });
 
+
             deferred.promise.done = function(fn) {
                 deferred.promise.then(function(resData) {
-                    console.log(resData);
                     if (resData === abortMsgStr) {
                         return;
                     }
@@ -123,21 +169,25 @@
             //取消
             deferred.promise.abort = function() {
                 delete allRequest[uid];
-                deferred.resolve();
+                deferred.resolve(abortMsgStr);
             };
             return deferred.promise;
-        };
+        };  // self.request ]]
 
-        var methods = ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'PATCH'];
+        var methods = ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'PATCH', 'JSONP'];
         angular.forEach(methods, function(m) {
             self[m.toLowerCase()] = function(url, data, config) {
                 switch (m) {
+                    case 'JSONP':
                     case 'GET':
                         if (data) {
                             var p = [];
                             angular.forEach(data, function(v, k) {
                                 p.push(k + '=' + v);
                             });
+                            if (m === 'JSONP') {
+                                p.push('callback=JSON_CALLBACK')
+                            }
                             p = '?' + p.join('&');
                             url += p;
                             data = null;
@@ -166,8 +216,6 @@
         /* TODO:
          *
          *  jsonp
-         *  abort
-         *  when(xhr, xhr, ...)
          *
          * */
 

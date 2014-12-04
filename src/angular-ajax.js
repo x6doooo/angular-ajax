@@ -182,8 +182,9 @@
             return deferred.promise;
         };  // self.request ]]
 
-        var methods = ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'PATCH', 'JSONP'];
+        var methods = ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'PATCH', 'JSONP', 'JSON'];
         angular.forEach(methods, function(m) {
+            var selfConfig = undefined;
             self[m.toLowerCase()] = function(url, data, config) {
                 switch (m) {
                     case 'JSONP':
@@ -208,6 +209,14 @@
                             data = null;
                         }
                         break;
+                    case 'JSON':
+                        m = 'get';
+                        selfConfig = {
+                            codeField: undefined,
+                            successCode: undefined,
+                            contentField: undefined,
+                            errorField: undefined
+                        };
                     default:
                         break;
                 }
@@ -217,7 +226,7 @@
                 };
                 if (data) obj.data = data;
                 if (config) obj.config = config;
-                return this.request(obj);
+                return this.request(obj, selfConfig);
             };
         });
 

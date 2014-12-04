@@ -143,10 +143,10 @@
                     if (res.data[cfg.codeField] === cfg.successCode) {
                         deferred.resolve(res.data[cfg.contentField]);
                         return;
-                    } else {
-                        if (res.data !== undefined) {
-                            deferred.resolve(res.data);
-                        }
+                    } 
+                } else {
+                    if (res.data !== undefined) {
+                        deferred.resolve(res.data);
                     }
                 }
                 // 后端报错
@@ -217,6 +217,7 @@
                             contentField: undefined,
                             errorField: undefined
                         };
+                        break;
                     default:
                         break;
                 }

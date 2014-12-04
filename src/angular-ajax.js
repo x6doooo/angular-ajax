@@ -137,9 +137,15 @@
             $http(ajaxConfig).then(function(res) {
                 delete allRequest[uid];
                 // 正常返回结果
-                if (res.data[cfg.codeField] === cfg.successCode) {
-                    deferred.resolve(res.data[cfg.contentField]);
-                    return;
+                if (cfg.codeField !== undefined
+                    if (res.data[cfg.codeField] === cfg.successCode) {
+                        deferred.resolve(res.data[cfg.contentField]);
+                        return;
+                    } else {
+                        if (res.data !== undefined) {
+                            deferred.resolve(res.data);
+                        }
+                    }
                 }
                 // 后端报错
                 deferred.reject(res.data[cfg.errorField]);

@@ -113,7 +113,7 @@
             });
         };
 
-        self.request = function(ajaxConfig) {
+        self.request = function(ajaxConfig, selfConfig) {
             
             var uid = guid('$ajax');
 
@@ -124,7 +124,9 @@
                 self.setConfig({});
             }
             var cfg = self.config;
-
+            if (selfConfig) {
+                cfg = angular.extend({}, self.config, selfConfig);
+            }
 
             var deferred = $q.defer();
             ajaxConfig.timeout = deferred;

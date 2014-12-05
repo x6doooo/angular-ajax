@@ -210,7 +210,7 @@
                         }
                         break;
                     case 'JSON':
-                        m = 'get';
+                        m = 'GET';
                         selfConfig = {
                             codeField: undefined,
                             successCode: undefined,

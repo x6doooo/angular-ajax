@@ -33,7 +33,18 @@
     ]).config(function(cfpLoadingBarProvider) {
         //true is the default, but I left this here as an example:
         cfpLoadingBarProvider.includeSpinner = true;
-    }).service('$ajax', ['$q', '$http', 'cfpLoadingBar', function($q, $http, cfpLoadingBar) {
+    }).service('$ajax', [
+        '$q',
+        '$http',
+        'cfpLoadingBar',
+        '$window',
+        //'$sce',
+        function(
+            $q,
+            $http,
+            cfpLoadingBar,
+            $window
+        ) {
         var self = this;
         // 默认设置
         self.defaultConfig = {
@@ -150,14 +161,23 @@
                     }
                 }
                 // 后端报错
+                //if (res.data[cfg.codeField] === 777) {
+                    //$route.reload();
+                //    $window.location.reload();
+                //}
                 deferred.reject(res.data[cfg.errorField]);
             },
             function(res) {
+                //console.log(res);
                 delete allRequest[uid];
+                //if (res.status === 403 && res.data && res.data.code === 777) {
+                    //$route.reload();
+                    //$window.location.reload();
+                    //window.open('/');
+                //}
                 // http错误
                 deferred.reject(res.status + ' : ' + res.statusText);
             });
-
 
             deferred.promise.done = function(fn) {
                 deferred.promise.then(function(resData) {
@@ -192,7 +212,7 @@
                         if (data) {
                             var p = [];
                             angular.forEach(data, function(v, k) {
-                                p.push(k + '=' + v);
+                                p.push(k + '=' + encodeURIComponent(v));
                             });
                             if (m === 'JSONP') {
                                 p.push('callback=JSON_CALLBACK')
